@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>Accessibility Module</h1>
+    <p>This is working! User settings status:</p>
+    <ul>
+        <li>User ID: {{ current_user.id }}</li>
+        <li>User Settings: {{ 'Found' if user_settings else 'None' }}</li>
+        {% if user_settings %}
+        <li>Language: {{ user_settings.language }}</li>
+        <li>TTS Enabled: {{ user_settings.tts_enabled }}</li>
+        <li>STT Enabled: {{ user_settings.stt_enabled }}</li>
+        {% endif %}
+    </ul>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5>TTS Test</h5>
+                    <p>Click to test text-to-speech</p>
+                    <button onclick="testTTS()" class="btn btn-primary">Speak Test</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5>STT Test</h5>
+                    <p>Click to test speech-to-text</p>
+                    <button onclick="testSTT()" class="btn btn-success">Listen Test</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="testResults" class="mt-3"></div>
+</div>
+
+<script>
+function testTTS() {
+    if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance('Accessibility module is working!');
+        speechSynthesis.speak(utterance);
+        document.getElementById('testResults').innerHTML = '<div class="alert alert-success">TTS is working! You should hear speech.</div>';
+    } else {
+        document.getElementById('testResults').innerHTML = '<div class="alert alert-warning">Text-to-speech not supported in this browser.</div>';
+    }
+}
+
+function testSTT() {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        document.getElementById('testResults').innerHTML = '<div class="alert alert-info">Speech recognition is supported! Click "Start Listening" in the full interface.</div>';
+    } else {
+        document.getElementById('testResults').innerHTML = '<div class="alert alert-warning">Speech recognition not supported in this browser.</div>';
+    }
+}
+</script>
+{% endblock %}

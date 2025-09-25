@@ -1,0 +1,714 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-gradient-ai text-white">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="h3 mb-1">
+                                <i class="fas fa-brain me-2"></i>AI Schedule Generator
+                            </h1>
+                            <p class="mb-0 opacity-75">
+                                Intelligent scheduling powered by machine learning and productivity analytics
+                            </p>
+                        </div>
+                        <div class="stats-preview">
+                            <div class="d-flex gap-3">
+                                <div class="text-center">
+                                    <div class="h4 mb-0" id="pending-tasks-count">0</div>
+                                    <small class="opacity-75">Pending Tasks</small>
+                                </div>
+                                <div class="text-center">
+                                    <div class="h4 mb-0" id="avg-productivity">0%</div>
+                                    <small class="opacity-75">Avg Productivity</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Configuration Panel -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-cogs me-2 text-primary"></i>Schedule Configuration
+                        </h4>
+                        <span class="badge bg-primary">AI Optimized</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info border-0">
+                        <div class="d-flex">
+                            <i class="fas fa-info-circle me-3 mt-1"></i>
+                            <div>
+                                <strong>Smart Scheduling:</strong> Our AI analyzes your task priorities, energy patterns,
+                                historical productivity, and optimal study times to create the most effective schedule.
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="POST" id="schedule-form">
+                        <!-- Schedule Type Selection -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Schedule Type</label>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="schedule-type-card" data-type="daily">
+                                        <div class="card h-100 border-primary">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-calendar-day fa-2x text-primary mb-2"></i>
+                                                <h6 class="card-title">Daily Schedule</h6>
+                                                <p class="card-text small text-muted">Optimize one day with focused time blocks</p>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="schedule_type" id="daily" value="daily" checked>
+                                                    <label class="form-check-label" for="daily">
+                                                        Select Daily
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="schedule-type-card" data-type="multi-day">
+                                        <div class="card h-100">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-calendar-week fa-2x text-secondary mb-2"></i>
+                                                <h6 class="card-title">Multi-Day Schedule</h6>
+                                                <p class="card-text small text-muted">Plan ahead with strategic task distribution</p>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="schedule_type" id="multi-day" value="multi-day">
+                                                    <label class="form-check-label" for="multi-day">
+                                                        Select Multi-Day
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date Selection -->
+                        <div id="date-selection" class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-calendar me-2"></i>Schedule Date
+                            </label>
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <input type="date"
+                                           class="form-control form-control-lg"
+                                           id="date"
+                                           name="date"
+                                           value="{{ today.strftime('%Y-%m-%d') }}"
+                                           min="{{ today.strftime('%Y-%m-%d') }}"
+                                           required>
+                                    <div class="form-text">
+                                        Choose the date for your optimized schedule
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="date-preview card">
+                                        <div class="card-body text-center p-3">
+                                            <div class="h5 mb-1" id="selected-date-display">{{ today.strftime('%b %d') }}</div>
+                                            <small class="text-muted">{{ today.strftime('%A') }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                        
+                                <!-- Sidebar with Insights -->
+                                <div class="col-lg-4">
+                                    <!-- AI Insights Panel -->
+                                    <div class="card mb-3 border-0 shadow-sm">
+                                        <div class="card-header bg-gradient-ai text-white border-0">
+                                            <h6 class="card-title mb-0">
+                                                <i class="fas fa-brain me-2"></i>AI Insights
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="insight-item mb-3">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <i class="fas fa-tasks text-primary me-2"></i>
+                                                    <strong>Pending Tasks</strong>
+                                                </div>
+                                                <div class="progress" style="height: 6px;">
+                                                    <div class="progress-bar bg-primary" style="width: 0%" id="tasks-progress"></div>
+                                                </div>
+                                                <small class="text-muted">Analyzing your task queue...</small>
+                                            </div>
+                        
+                                            <div class="insight-item mb-3">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <i class="fas fa-bolt text-warning me-2"></i>
+                                                    <strong>Energy Pattern</strong>
+                                                </div>
+                                                <div class="energy-pattern-preview">
+                                                    <small class="text-muted">Peak hours: <span id="peak-hours">9AM-11AM</span></small>
+                                                </div>
+                                            </div>
+                        
+                                            <div class="insight-item">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <i class="fas fa-chart-line text-success me-2"></i>
+                                                    <strong>Productivity Score</strong>
+                                                </div>
+                                                <div class="h4 text-success mb-0" id="productivity-score">0%</div>
+                                                <small class="text-muted">Based on recent sessions</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                        
+                                    <!-- Optimization Tips -->
+                                    <div class="card mb-3 border-0 shadow-sm">
+                                        <div class="card-header bg-light border-0">
+                                            <h6 class="card-title mb-0">
+                                                <i class="fas fa-lightbulb text-warning me-2"></i>Optimization Tips
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="tips-list">
+                                                <div class="tip-item mb-3">
+                                                    <div class="tip-icon">
+                                                        <i class="fas fa-clock text-primary"></i>
+                                                    </div>
+                                                    <div class="tip-content">
+                                                        <strong>Time Blocking</strong>
+                                                        <br><small>Dedicated time slots improve focus and reduce context switching</small>
+                                                    </div>
+                                                </div>
+                                                <div class="tip-item mb-3">
+                                                    <div class="tip-icon">
+                                                        <i class="fas fa-brain text-info"></i>
+                                                    </div>
+                                                    <div class="tip-content">
+                                                        <strong>Energy Awareness</strong>
+                                                        <br><small>Schedule complex tasks during peak energy hours</small>
+                                                    </div>
+                                                </div>
+                                                <div class="tip-item mb-3">
+                                                    <div class="tip-icon">
+                                                        <i class="fas fa-balance-scale text-success"></i>
+                                                    </div>
+                                                    <div class="tip-content">
+                                                        <strong>Work-Life Balance</strong>
+                                                        <br><small>Include breaks and respect your preferred study times</small>
+                                                    </div>
+                                                </div>
+                                                <div class="tip-item">
+                                                    <div class="tip-icon">
+                                                        <i class="fas fa-flag text-danger"></i>
+                                                    </div>
+                                                    <div class="tip-content">
+                                                        <strong>Priority Focus</strong>
+                                                        <br><small>Tackle high-priority tasks when you're most productive</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                        
+                                    <!-- Recent Schedules -->
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-header bg-light border-0">
+                                            <h6 class="card-title mb-0">
+                                                <i class="fas fa-history me-2 text-secondary"></i>Recent Schedules
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="recent-schedules" class="text-center py-3">
+                                                <small class="text-muted">Loading recent schedules...</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Options -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-sliders-h me-2"></i>Advanced Options
+                            </label>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="include_breaks" name="include_breaks" checked>
+                                                <label class="form-check-label" for="include_breaks">
+                                                    <strong>Smart Break Planning</strong>
+                                                    <br><small class="text-muted">Include recommended breaks between tasks</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="energy_optimization" name="energy_optimization" checked>
+                                                <label class="form-check-label" for="energy_optimization">
+                                                    <strong>Energy-Based Scheduling</strong>
+                                                    <br><small class="text-muted">Schedule tasks during your peak energy times</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="priority_focus" name="priority_focus" checked>
+                                                <label class="form-check-label" for="priority_focus">
+                                                    <strong>Priority-First Approach</strong>
+                                                    <br><small class="text-muted">Focus on high-priority tasks first</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="productivity_insights" name="productivity_insights" checked>
+                                                <label class="form-check-label" for="productivity_insights">
+                                                    <strong>Productivity Analytics</strong>
+                                                    <br><small class="text-muted">Include performance insights and recommendations</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Multi-Day Options (Hidden by default) -->
+                        <div id="multi-day-options" class="mb-4" style="display: none;">
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="card-title mb-0">
+                                        <i class="fas fa-calendar-week me-2"></i>Multi-Day Configuration
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="start_date" class="form-label">Start Date</label>
+                                            <input type="date"
+                                                   class="form-control"
+                                                   id="start_date"
+                                                   name="date"
+                                                   value="{{ today.strftime('%Y-%m-%d') }}"
+                                                   min="{{ today.strftime('%Y-%m-%d') }}">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="days" class="form-label">Duration</label>
+                                            <select class="form-select" id="days" name="days">
+                                                <option value="3">3 Days - Quick Sprint</option>
+                                                <option value="5">5 Days - Work Week</option>
+                                                <option value="7" selected>7 Days - Full Week</option>
+                                                <option value="14">14 Days - Two Weeks</option>
+                                                <option value="30">30 Days - Monthly Plan</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="alert alert-light mt-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-lightbulb me-1"></i>
+                                            Multi-day schedules distribute tasks intelligently across days based on deadlines, priorities, and your energy patterns.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Generation Preview -->
+                        <div class="mb-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-eye me-2"></i>Schedule Preview
+                                    </h6>
+                                    <div id="schedule-preview" class="text-muted">
+                                        Select your options above to see a preview of your optimized schedule...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{{ url_for('schedules.index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Back to Schedules
+                            </a>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-info" onclick="previewSchedule()">
+                                    <i class="fas fa-eye me-1"></i>Preview
+                                </button>
+                                <button type="submit" class="btn btn-primary btn-lg" id="generate-btn">
+                                    <i class="fas fa-magic me-2"></i>Generate AI Schedule
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+<!-- Advanced Generate Form Styles -->
+<style>
+/* AI Gradient background */
+.bg-gradient-ai {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Schedule Type Cards */
+.schedule-type-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.schedule-type-card:hover .card {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.schedule-type-card.selected .card {
+    border-color: #007bff !important;
+    background-color: #f8f9ff;
+}
+
+/* Date Preview */
+.date-preview {
+    border: 1px solid #dee2e6;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+/* Insights */
+.insight-item {
+    padding: 12px;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.energy-pattern-preview {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Tips */
+.tips-list .tip-item {
+    display: flex;
+    gap: 12px;
+}
+
+.tips-list .tip-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(0,123,255,0.1);
+}
+
+.tips-list .tip-content strong {
+    color: #495057;
+}
+
+/* Form enhancements */
+.form-check-label {
+    cursor: pointer;
+}
+
+.progress {
+    border-radius: 3px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .bg-gradient-ai .d-flex {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .stats-preview {
+        order: -1;
+    }
+}
+
+/* Loading states */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Preview animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.preview-item {
+    animation: fadeInUp 0.5s ease;
+}
+</style>
+
+<!-- Interactive JavaScript -->
+<script>
+// Global variables
+let pendingTasks = 0;
+let productivityScore = 0;
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    initializeForm();
+    loadInsights();
+    setupEventListeners();
+});
+
+// Initialize form behavior
+function initializeForm() {
+    // Set up schedule type selection
+    const scheduleTypeCards = document.querySelectorAll('.schedule-type-card');
+    scheduleTypeCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const type = this.dataset.type;
+            selectScheduleType(type);
+        });
+    });
+
+    // Date change handler
+    document.getElementById('date').addEventListener('change', updateDatePreview);
+}
+
+// Select schedule type
+function selectScheduleType(type) {
+    // Update radio buttons
+    document.querySelectorAll('input[name="schedule_type"]').forEach(radio => {
+        radio.checked = (radio.value === type);
+    });
+
+    // Update card styles
+    document.querySelectorAll('.schedule-type-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    document.querySelector(`[data-type="${type}"]`).classList.add('selected');
+
+    // Show/hide options
+    const multiDayOptions = document.getElementById('multi-day-options');
+    const dateSelection = document.getElementById('date-selection');
+
+    if (type === 'multi-day') {
+        multiDayOptions.style.display = 'block';
+        dateSelection.style.display = 'none';
+    } else {
+        multiDayOptions.style.display = 'none';
+        dateSelection.style.display = 'block';
+    }
+
+    // Update preview
+    updateSchedulePreview();
+}
+
+// Update date preview
+function updateDatePreview() {
+    const dateInput = document.getElementById('date');
+    const selectedDate = new Date(dateInput.value);
+    const displayElement = document.getElementById('selected-date-display');
+
+    if (displayElement && selectedDate) {
+        const options = { weekday: 'short', month: 'short', day: 'numeric' };
+        displayElement.textContent = selectedDate.toLocaleDateString('en-US', options);
+    }
+}
+
+// Load user insights
+async function loadInsights() {
+    try {
+        // This would typically fetch from an API endpoint
+        // For now, simulate loading
+        setTimeout(() => {
+            pendingTasks = Math.floor(Math.random() * 15) + 5;
+            productivityScore = Math.floor(Math.random() * 40) + 60;
+
+            updateInsightsDisplay();
+        }, 1000);
+    } catch (error) {
+        console.error('Error loading insights:', error);
+    }
+}
+
+// Update insights display
+function updateInsightsDisplay() {
+    // Update pending tasks
+    document.getElementById('pending-tasks-count').textContent = pendingTasks;
+
+    // Update productivity
+    document.getElementById('productivity-score').textContent = productivityScore + '%';
+    document.getElementById('avg-productivity').textContent = productivityScore + '%';
+
+    // Update tasks progress bar
+    const progressBar = document.getElementById('tasks-progress');
+    const progressPercent = Math.min((pendingTasks / 20) * 100, 100); // Assume 20 is max
+    progressBar.style.width = progressPercent + '%';
+}
+
+// Setup event listeners
+function setupEventListeners() {
+    // Form submission
+    document.getElementById('schedule-form').addEventListener('submit', handleFormSubmit);
+
+    // Advanced options changes
+    document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', updateSchedulePreview);
+    });
+}
+
+// Handle form submission
+function handleFormSubmit(event) {
+    const submitBtn = document.getElementById('generate-btn');
+    submitBtn.classList.add('btn-loading');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-magic me-2"></i>Generating AI Schedule...';
+
+    // Show loading state
+    showNotification('AI is analyzing your tasks and creating an optimized schedule...', 'info');
+
+    // Let the form submit normally
+    // The loading state will be maintained until page redirect
+}
+
+// Preview schedule
+function previewSchedule() {
+    const previewElement = document.getElementById('schedule-preview');
+    previewElement.innerHTML = `
+        <div class="preview-loading">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            Analyzing your preferences and generating preview...
+        </div>
+    `;
+
+    // Simulate preview generation
+    setTimeout(() => {
+        const previewContent = generatePreviewContent();
+        previewElement.innerHTML = previewContent;
+    }, 2000);
+}
+
+// Generate preview content
+function generatePreviewContent() {
+    const scheduleType = document.querySelector('input[name="schedule_type"]:checked').value;
+    const selectedDate = document.getElementById('date').value;
+
+    let content = '<div class="preview-content">';
+
+    if (scheduleType === 'daily') {
+        content += `
+            <div class="preview-item mb-3 p-3 bg-light rounded">
+                <h6><i class="fas fa-calendar-day me-2 text-primary"></i>Daily Schedule Preview</h6>
+                <small class="text-muted">For ${new Date(selectedDate).toLocaleDateString()}</small>
+                <ul class="list-unstyled mt-2 small">
+                    <li><i class="fas fa-check text-success me-1"></i> 9:00 AM - 10:30 AM: High priority task</li>
+                    <li><i class="fas fa-check text-success me-1"></i> 10:45 AM - 11:45 AM: Medium priority task</li>
+                    <li><i class="fas fa-coffee text-warning me-1"></i> 11:45 AM - 12:00 PM: Short break</li>
+                    <li><i class="fas fa-check text-success me-1"></i> 2:00 PM - 3:30 PM: Focused study block</li>
+                </ul>
+            </div>
+        `;
+    } else {
+        content += `
+            <div class="preview-item mb-3 p-3 bg-light rounded">
+                <h6><i class="fas fa-calendar-week me-2 text-primary"></i>Multi-Day Schedule Preview</h6>
+                <small class="text-muted">7-day optimized plan</small>
+                <ul class="list-unstyled mt-2 small">
+                    <li><strong>Day 1-2:</strong> Focus on high-priority tasks</li>
+                    <li><strong>Day 3-4:</strong> Mix of high and medium priority</li>
+                    <li><strong>Day 5-7:</strong> Complete remaining tasks with breaks</li>
+                </ul>
+            </div>
+        `;
+    }
+
+    content += `
+        <div class="preview-item p-3 bg-success text-white rounded">
+            <h6><i class="fas fa-thumbs-up me-2"></i>Optimization Applied</h6>
+            <ul class="list-unstyled mb-0 small">
+                <li>✓ Energy-based time allocation</li>
+                <li>✓ Smart break insertion</li>
+                <li>✓ Priority task sequencing</li>
+                <li>✓ Conflict-free scheduling</li>
+            </ul>
+        </div>
+    `;
+
+    content += '</div>';
+    return content;
+}
+
+// Update schedule preview when options change
+function updateSchedulePreview() {
+    const previewElement = document.getElementById('schedule-preview');
+    if (previewElement.querySelector('.preview-content')) {
+        previewElement.innerHTML = '<small class="text-muted">Options changed. Click "Preview" to update.</small>';
+    }
+}
+
+// Notification system
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Initialize insights on load
+loadInsights();
+</script>
+{% endblock %}

@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0">Study Goals</h1>
+                    <p class="text-muted mb-0">Set and track your academic achievements</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('goals.notifications') }}" class="btn btn-outline-warning me-2 position-relative">
+                        <i class="fas fa-bell me-1"></i>Notifications
+                        {% if unread_notifications > 0 %}
+                        <span class="badge bg-danger notification-badge">{{ unread_notifications }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{{ url_for('goals.analytics') }}" class="btn btn-outline-info me-2">
+                        <i class="fas fa-chart-bar me-1"></i>Analytics
+                    </a>
+                    <a href="{{ url_for('goals.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Add New Goal
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="all" {{ 'selected' if status_filter == 'all' else '' }}>All Goals</option>
+                                <option value="active" {{ 'selected' if status_filter == 'active' else '' }}>Active</option>
+                                <option value="achieved" {{ 'selected' if status_filter == 'achieved' else '' }}>Achieved</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="all">All Categories</option>
+                                <optgroup label="Academic Goals">
+                                    <option value="exam-preparation" {{ 'selected' if category_filter == 'exam-preparation' else '' }}>Exam Preparation</option>
+                                    <option value="subject-mastery" {{ 'selected' if category_filter == 'subject-mastery' else '' }}>Subject Mastery</option>
+                                    <option value="grade-improvement" {{ 'selected' if category_filter == 'grade-improvement' else '' }}>Grade Improvement</option>
+                                    <option value="assignment-completion" {{ 'selected' if category_filter == 'assignment-completion' else '' }}>Assignment Completion</option>
+                                </optgroup>
+                                <optgroup label="Skill Development">
+                                    <option value="study-skills" {{ 'selected' if category_filter == 'study-skills' else '' }}>Study Skills</option>
+                                    <option value="time-management" {{ 'selected' if category_filter == 'time-management' else '' }}>Time Management</option>
+                                    <option value="research-skills" {{ 'selected' if category_filter == 'research-skills' else '' }}>Research Skills</option>
+                                    <option value="language-learning" {{ 'selected' if category_filter == 'language-learning' else '' }}>Language Learning</option>
+                                </optgroup>
+                                <optgroup label="Projects & Activities">
+                                    <option value="research-project" {{ 'selected' if category_filter == 'research-project' else '' }}>Research Project</option>
+                                    <option value="group-project" {{ 'selected' if category_filter == 'group-project' else '' }}>Group Project</option>
+                                    <option value="personal-project" {{ 'selected' if category_filter == 'personal-project' else '' }}>Personal Project</option>
+                                    <option value="volunteer-work" {{ 'selected' if category_filter == 'volunteer-work' else '' }}>Volunteer Work</option>
+                                </optgroup>
+                                <optgroup label="Other">
+                                    <option value="career-development" {{ 'selected' if category_filter == 'career-development' else '' }}>Career Development</option>
+                                    <option value="health-fitness" {{ 'selected' if category_filter == 'health-fitness' else '' }}>Health & Fitness</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-filter me-1"></i>Filter
+                            </button>
+                            <a href="{{ url_for('goals.index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Goals List -->
+    <div class="row">
+        <div class="col-12">
+            {% if goals.items %}
+                            {% for goal in goals.items %}
+                            <div class="card mb-3 goal-card {% if goal.achieved %}goal-achieved{% endif %}">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <div class="d-flex align-items-start">
+                                                <div class="goal-icon me-3">
+                                                    {% if goal.achieved %}
+                                                        <i class="fas fa-trophy text-warning"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-bullseye text-primary"></i>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <h5 class="card-title mb-1 {% if goal.achieved %}text-decoration-line-through text-muted{% endif %}">
+                                                        {{ goal.title }}
+                                                    </h5>
+                                                    {% if goal.description %}
+                                                    <p class="card-text text-muted mb-2">{{ goal.description|truncate(100) }}</p>
+                                                    {% endif %}
+            
+                                                    <!-- Progress Bar -->
+                                                    <div class="goal-progress mb-2">
+                                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                                            <small class="text-muted">Progress</small>
+                                                            <small class="text-muted">{{ "%.1f"|format(goal.current_value) }}/{{ "%.1f"|format(goal.target_value) }} {{ goal.unit }}</small>
+                                                        </div>
+                                                        <div class="progress" style="height: 8px;">
+                                                            {% set progress_percent = (goal.current_value / goal.target_value * 100) if goal.target_value > 0 else 0 %}
+                                                            <div class="progress-bar {% if goal.achieved %}bg-success{% elif progress_percent > 75 %}bg-info{% elif progress_percent > 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                                                                 role="progressbar"
+                                                                 aria-valuenow="{{ goal.current_value }}"
+                                                                 aria-valuemin="0"
+                                                                 aria-valuemax="{{ goal.target_value }}"
+                                                                 data-width="{{ progress_percent }}"></div>
+                                                        </div>
+                                                    </div>
+
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            {% if goal.category %}
+                                            <span class="badge bg-secondary">{{ goal.category.replace('-', ' ').title() }}</span>
+                                            {% endif %}
+                                            {% if goal.target_date %}
+                                            <span class="badge bg-info">
+                                                <i class="fas fa-calendar me-1"></i>{{ goal.target_date.strftime('%b %d, %Y') }}
+                                            </span>
+                                            {% endif %}
+                                            {% if goal.achieved %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check me-1"></i>Achieved {{ goal.achieved_at.strftime('%b %d, %Y') if goal.achieved_at else '' }}
+                                            </span>
+                                            {% else %}
+                                            <span class="badge bg-warning">In Progress</span>
+                                            {% endif %}
+                                            {% if goal.get_milestones() %}
+                                            <span class="badge bg-light text-dark">
+                                                <i class="fas fa-flag me-1"></i>{{ goal.get_milestones()|length }} milestones
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="btn-group mb-2" role="group">
+                                    <a href="{{ url_for('goals.view', goal_id=goal.id) }}" class="btn btn-sm btn-outline-info" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('goals.edit', goal_id=goal.id) }}" class="btn btn-sm btn-outline-warning" title="Edit Goal">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('goals.delete', goal_id=goal.id) }}" class="d-inline"
+                                          onsubmit="return confirm('Are you sure you want to delete this goal?')">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Goal">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                {% if not goal.achieved %}
+                                <div class="goal-actions">
+                                    <form method="POST" action="{{ url_for('goals.achieve', goal_id=goal.id) }}" class="d-inline me-2">
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="fas fa-check me-1"></i>Mark Achieved
+                                        </button>
+                                    </form>
+                                    <button type="button" class="btn btn-sm btn-outline-primary progress-btn"
+                                            data-goal-id="{{ goal.id }}"
+                                            data-goal-title="{{ goal.title }}"
+                                            data-current-value="{{ goal.current_value }}"
+                                            data-unit="{{ goal.unit }}">
+                                        <i class="fas fa-plus me-1"></i>Update Progress
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Pagination -->
+                {% if goals.has_prev or goals.has_next %}
+                <nav aria-label="Goal pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if goals.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('goals.index', page=goals.prev_num, status=status_filter, category=category_filter) }}">
+                                Previous
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Previous</span>
+                        </li>
+                        {% endif %}
+
+                        {% for page_num in goals.iter_pages() %}
+                        {% if page_num %}
+                        <li class="page-item {{ 'active' if page_num == goals.page else '' }}">
+                            <a class="page-link" href="{{ url_for('goals.index', page=page_num, status=status_filter, category=category_filter) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if goals.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('goals.index', page=goals.next_num, status=status_filter, category=category_filter) }}">
+                                Next
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Next</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+            {% else %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-bullseye fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">No goals found</h4>
+                        <p class="text-muted mb-4">You haven't set any goals yet, or none match your current filters.</p>
+                        <a href="{{ url_for('goals.create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Create Your First Goal
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Progress Update Modal -->
+<div class="modal fade" id="progressModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Progress</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="progressForm" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="goalTitle" class="form-label">Goal</label>
+                        <input type="text" class="form-control" id="goalTitle" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="currentProgress" class="form-label">Current Progress</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="currentProgress" name="progress_value" step="0.1" min="0" required>
+                            <span class="input-group-text" id="unitDisplay"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Progress</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set progress bar widths dynamically
+document.addEventListener('DOMContentLoaded', function() {
+    // Set progress bar widths
+    const progressBars = document.querySelectorAll('.progress-bar[data-width]');
+    progressBars.forEach(bar => {
+        const width = bar.getAttribute('data-width');
+        bar.style.width = width + '%';
+    });
+
+    // Add click handlers for progress buttons
+    const progressButtons = document.querySelectorAll('.progress-btn');
+    progressButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const goalId = this.getAttribute('data-goal-id');
+            const title = this.getAttribute('data-goal-title');
+            const currentValue = this.getAttribute('data-current-value');
+            const unit = this.getAttribute('data-unit');
+
+            openProgressModal(goalId, title, currentValue, unit);
+        });
+    });
+
+    // Initialize animations
+    addCardInteractions();
+    addStaggerAnimations();
+    addLoadingEffects();
+    createParticles();
+});
+
+// Update goal progress modal
+function openProgressModal(goalId, title, currentValue, unit) {
+    document.getElementById('goalTitle').value = title;
+    document.getElementById('currentProgress').value = currentValue;
+    document.getElementById('unitDisplay').textContent = unit;
+    document.getElementById('progressForm').action = `/goals/${goalId}/progress`;
+
+    const modal = new bootstrap.Modal(document.getElementById('progressModal'));
+    modal.show();
+}
+
+// Add interactive card animations
+function addCardInteractions() {
+    const cards = document.querySelectorAll('.goal-card');
+
+    cards.forEach((card, index) => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px) scale(1.02) rotate(1deg)';
+        });
+
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1) rotate(0deg)';
+        });
+
+        card.addEventListener('click', function(e) {
+            if (!e.target.closest('a, button, form')) {
+                const ripple = document.createElement('div');
+                ripple.style.position = 'absolute';
+                ripple.style.borderRadius = '50%';
+                ripple.style.background = 'rgba(255, 255, 255, 0.3)';
+                ripple.style.transform = 'scale(0)';
+                ripple.style.animation = 'ripple 0.6s linear';
+                ripple.style.left = (e.offsetX - 10) + 'px';
+                ripple.style.top = (e.offsetY - 10) + 'px';
+                ripple.style.width = '20px';
+                ripple.style.height = '20px';
+
+                this.style.position = 'relative';
+                this.appendChild(ripple);
+
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            }
+        });
+    });
+}
+
+// Add staggered animation delays
+function addStaggerAnimations() {
+    const cards = document.querySelectorAll('.goal-card');
+    cards.forEach((card, index) => {
+        card.style.animationDelay = `${(index + 1) * 0.1}s`;
+    });
+}
+
+// Add loading animation for dynamic content
+function addLoadingEffects() {
+    const progressElements = document.querySelectorAll('.goal-progress');
+    progressElements.forEach(el => {
+        el.classList.add('loading');
+        setTimeout(() => {
+            el.classList.remove('loading');
+        }, 500);
+    });
+}
+
+// Particle effect for background
+function createParticles() {
+    const container = document.querySelector('.container');
+    if (!container) return;
+
+    for (let i = 0; i < 20; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'floating-particle';
+        particle.style.cssText = `
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+            left: ${Math.random() * 100}%;
+            top: ${Math.random() * 100}%;
+            animation-delay: ${Math.random() * 8}s;
+            z-index: -1;
+        `;
+        container.appendChild(particle);
+    }
+}
+</script>
+
+<style>
+.goal-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items-center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(102, 126, 234, 0.1);
+    font-size: 1.2rem;
+}
+
+.goal-progress {
+    max-width: 300px;
+}
+
+.goal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.goal-card {
+    transition: all 0.3s ease;
+}
+
+.goal-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.goal-achieved .goal-icon {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+}
+</style>
+{% endblock %}
