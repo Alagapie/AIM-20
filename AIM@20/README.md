@@ -276,4 +276,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Contact
 
-For questions or support, please contact [your email] or create an issue on GitHub.
+
+For questions or support, please contact abdulbasitsuleiman660@gmail.com or create an issue on GitHub.
