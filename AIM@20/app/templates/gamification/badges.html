@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+.badge-card {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+    border: none;
+    text-align: center;
+}
+
+.badge-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.badge-icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    margin: 0 auto 1rem;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.badge-earned {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #333;
+}
+
+.badge-locked {
+    background: linear-gradient(135deg, #E0E0E0, #C0C0C0);
+    color: #666;
+    position: relative;
+}
+
+.badge-locked::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.7);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.badge-locked::before {
+    content: '🔒';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    z-index: 1;
+}
+
+.badge-progress {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.progress-bar-custom {
+    height: 8px;
+    background-color: #007bff;
+    border-radius: 4px;
+}
+
+.badge-category {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 2rem;
+}
+
+.category-title {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.filter-btn {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #495057;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    margin: 0.25rem;
+    transition: all 0.3s ease;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+    background: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+.stats-overview {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 3rem;
+}
+
+.congratulations {
+    animation: celebrate 1s ease-in-out;
+}
+
+@keyframes celebrate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0">🏅 Achievement Badges</h1>
+                    <p class="text-muted mb-0">Collect badges by completing challenges and reaching milestones</p>
+                </div>
+                <a href="{{ url_for('gamification.index') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-home me-2"></i>Back to Hub
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="stats-overview">
+        <div class="row text-center">
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="stat-value">{{ stats.total_badges_earned }}</div>
+                <div class="stat-label">Badges Earned</div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="stat-value">{{ stats.total_badges }}</div>
+                <div class="stat-label">Total Badges</div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="stat-value">{{ "%.0f"|format((stats.total_badges_earned / stats.total_badges * 100) if stats.total_badges > 0 else 0) }}%</div>
+                <div class="stat-label">Completion Rate</div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="stat-value">{{ stats.recent_badges }}</div>
+                <div class="stat-label">This Month</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Buttons -->
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <div class="btn-group flex-wrap" role="group">
+                <button type="button" class="btn filter-btn active" data-filter="all">All Badges</button>
+                <button type="button" class="btn filter-btn" data-filter="earned">Earned</button>
+                <button type="button" class="btn filter-btn" data-filter="locked">Locked</button>
+                <button type="button" class="btn filter-btn" data-filter="tasks">Tasks</button>
+                <button type="button" class="btn filter-btn" data-filter="goals">Goals</button>
+                <button type="button" class="btn filter-btn" data-filter="streak">Streaks</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Badges -->
+    <div class="badge-category">
+        <h3 class="category-title">📋 Task Master Badges</h3>
+        <div class="row">
+            {% set task_badges = [
+                {'id': 'first_task', 'title': 'Getting Started', 'description': 'Complete your first task', 'icon': 'fas fa-check-circle', 'points': 50, 'rarity': 'common'},
+                {'id': 'task_warrior', 'title': 'Task Warrior', 'description': 'Complete 5 tasks in one day', 'icon': 'fas fa-tasks', 'points': 100, 'rarity': 'uncommon'},
+                {'id': 'task_master', 'title': 'Task Master', 'description': 'Complete 50 tasks', 'icon': 'fas fa-crown', 'points': 250, 'rarity': 'rare'},
+                {'id': 'perfectionist', 'title': 'Perfectionist', 'description': 'Complete 10 tasks without missing any deadlines', 'icon': 'fas fa-star', 'points': 200, 'rarity': 'rare'},
+                {'id': 'speed_demon', 'title': 'Speed Demon', 'description': 'Complete a task in under 30 minutes', 'icon': 'fas fa-bolt', 'points': 150, 'rarity': 'uncommon'}
+            ] %}
+
+            {% for badge in task_badges %}
+            <div class="col-lg-4 col-md-6 mb-4 badge-item" data-category="tasks" data-earned="{{ 'true' if badge.id in earned_badge_ids else 'false' }}">
+                <div class="badge-card {% if badge.id in earned_badge_ids %}congratulations{% endif %}">
+                    <div class="badge-icon {% if badge.id in earned_badge_ids %}badge-earned{% else %}badge-locked{% endif %}">
+                        <i class="{{ badge.icon }}"></i>
+                    </div>
+                    <h5 class="mb-2">{{ badge.title }}</h5>
+                    <p class="text-muted mb-3">{{ badge.description }}</p>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted"><i class="fas fa-coins me-1"></i>{{ badge.points }} XP</small>
+                        <span class="badge bg-{{ 'success' if badge.rarity == 'common' else 'warning' if badge.rarity == 'uncommon' else 'danger' }}">{{ badge.rarity.title() }}</span>
+                    </div>
+                    {% if badge.id in earned_badge_ids %}
+                        <span class="badge bg-success"><i class="fas fa-check me-1"></i>Earned</span>
+                    {% else %}
+                        <div class="badge-progress">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-custom" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted mt-1">Progress: 0/1</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Goal Badges -->
+    <div class="badge-category">
+        <h3 class="category-title">🎯 Goal Achievement Badges</h3>
+        <div class="row">
+            {% set goal_badges = [
+                {'id': 'first_goal', 'title': 'Goal Setter', 'description': 'Create your first study goal', 'icon': 'fas fa-bullseye', 'points': 75, 'rarity': 'common'},
+                {'id': 'goal_achiever', 'title': 'Goal Achiever', 'description': 'Complete 3 study goals', 'icon': 'fas fa-trophy', 'points': 150, 'rarity': 'uncommon'},
+                {'id': 'goal_guru', 'title': 'Goal Guru', 'description': 'Complete 10 study goals with 100% progress', 'icon': 'fas fa-graduation-cap', 'points': 300, 'rarity': 'epic'},
+                {'id': 'marathon_runner', 'title': 'Marathon Runner', 'description': 'Complete a goal that took over 30 days', 'icon': 'fas fa-running', 'points': 200, 'rarity': 'rare'}
+            ] %}
+
+            {% for badge in goal_badges %}
+            <div class="col-lg-4 col-md-6 mb-4 badge-item" data-category="goals" data-earned="{{ 'true' if badge.id in earned_badge_ids else 'false' }}">
+                <div class="badge-card {% if badge.id in earned_badge_ids %}congratulations{% endif %}">
+                    <div class="badge-icon {% if badge.id in earned_badge_ids %}badge-earned{% else %}badge-locked{% endif %}">
+                        <i class="{{ badge.icon }}"></i>
+                    </div>
+                    <h5 class="mb-2">{{ badge.title }}</h5>
+                    <p class="text-muted mb-3">{{ badge.description }}</p>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted"><i class="fas fa-coins me-1"></i>{{ badge.points }} XP</small>
+                        <span class="badge bg-{{ 'success' if badge.rarity == 'common' else 'warning' if badge.rarity == 'uncommon' else 'danger' if badge.rarity == 'rare' else 'primary' }}">{{ badge.rarity.title() }}</span>
+                    </div>
+                    {% if badge.id in earned_badge_ids %}
+                        <span class="badge bg-success"><i class="fas fa-check me-1"></i>Earned</span>
+                    {% else %}
+                        <div class="badge-progress">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-custom" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted mt-1">Progress: 0/1</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Streak Badges -->
+    <div class="badge-category">
+        <h3 class="category-title">🔥 Streak Badges</h3>
+        <div class="row">
+            {% set streak_badges = [
+                {'id': 'streak_starter', 'title': 'Streak Starter', 'description': 'Maintain a 3-day streak', 'icon': 'fas fa-fire', 'points': 100, 'rarity': 'common'},
+                {'id': 'streak_master', 'title': 'Streak Master', 'description': 'Maintain a 7-day streak', 'icon': 'fas fa-fire-alt', 'points': 200, 'rarity': 'rare'},
+                {'id': 'streak_legend', 'title': 'Streak Legend', 'description': 'Maintain a 30-day streak', 'icon': 'fas fa-dragon', 'points': 500, 'rarity': 'epic'},
+                {'id': 'consistency_king', 'title': 'Consistency King', 'description': 'Maintain streaks for 100 days total', 'icon': 'fas fa-crown', 'points': 1000, 'rarity': 'legendary'}
+            ] %}
+
+            {% for badge in streak_badges %}
+            <div class="col-lg-4 col-md-6 mb-4 badge-item" data-category="streak" data-earned="{{ 'true' if badge.id in earned_badge_ids else 'false' }}">
+                <div class="badge-card {% if badge.id in earned_badge_ids %}congratulations{% endif %}">
+                    <div class="badge-icon {% if badge.id in earned_badge_ids %}badge-earned{% else %}badge-locked{% endif %}">
+                        <i class="{{ badge.icon }}"></i>
+                    </div>
+                    <h5 class="mb-2">{{ badge.title }}</h5>
+                    <p class="text-muted mb-3">{{ badge.description }}</p>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted"><i class="fas fa-coins me-1"></i>{{ badge.points }} XP</small>
+                        <span class="badge bg-{{ 'success' if badge.rarity == 'common' else 'warning' if badge.rarity == 'uncommon' else 'danger' if badge.rarity == 'rare' else 'primary' if badge.rarity == 'epic' else 'dark' }}">{{ badge.rarity.title() }}</span>
+                    </div>
+                    {% if badge.id in earned_badge_ids %}
+                        <span class="badge bg-success"><i class="fas fa-check me-1"></i>Earned</span>
+                    {% else %}
+                        <div class="badge-progress">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-custom" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted mt-1">Progress: 0/1</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter functionality
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const badgeItems = document.querySelectorAll('.badge-item');
+
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+
+            const filter = this.dataset.filter;
+
+            badgeItems.forEach(item => {
+                const shouldShow = filter === 'all' ||
+                    (filter === 'earned' && item.dataset.earned === 'true') ||
+                    (filter === 'locked' && item.dataset.earned === 'false') ||
+                    item.dataset.category === filter;
+
+                item.style.display = shouldShow ? 'block' : 'none';
+            });
+        });
+    });
+
+    // Animate newly earned badges
+    const earnedBadges = document.querySelectorAll('.badge-earned');
+    earnedBadges.forEach(badge => {
+        badge.style.animation = 'celebrate 1s ease-in-out';
+    });
+});
+</script>
+{% endblock %}

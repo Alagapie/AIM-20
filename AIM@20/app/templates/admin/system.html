@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-server text-primary me-2"></i>System Information
+                </h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin</a></li>
+                        <li class="breadcrumb-item active">System Info</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Database Statistics -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-database text-info me-2"></i>Database Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="stat-card mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="stat-icon bg-primary text-white me-3">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">Total Users</h6>
+                                        <span class="h4 mb-0">{{ db_stats.total_users }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stat-card mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="stat-icon bg-success text-white me-3">
+                                        <i class="fas fa-tasks"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">Total Tasks</h6>
+                                        <span class="h4 mb-0">{{ db_stats.total_tasks }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stat-card mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="stat-icon bg-warning text-white me-3">
+                                        <i class="fas fa-bullseye"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">Total Goals</h6>
+                                        <span class="h4 mb-0">{{ db_stats.total_goals }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stat-card mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="stat-icon bg-info text-white me-3">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">Total Sessions</h6>
+                                        <span class="h4 mb-0">{{ db_stats.total_sessions }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stat-card mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="stat-icon bg-secondary text-white me-3">
+                                        <i class="fas fa-trophy"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">Total Achievements</h6>
+                                        <span class="h4 mb-0">{{ db_stats.total_achievements }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stat-card mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="stat-icon bg-dark text-white me-3">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">Productivity Records</h6>
+                                        <span class="h4 mb-0">{{ db_stats.total_productivity_records }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Database Size -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-hdd text-success me-2"></i>Storage
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-database fa-3x text-muted mb-3"></i>
+                        <h4 class="mb-1">{{ db_stats.db_size or "Unknown" }}</h4>
+                        <p class="text-muted mb-0">Database Size</p>
+                    </div>
+                    {% if db_stats.db_size %}
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-success" role="progressbar"
+                             style="width: 45%" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                    <small class="text-muted">45% of recommended limit</small>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- System Actions -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tools text-warning me-2"></i>Maintenance
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.cleanup_data') }}"
+                          onsubmit="return confirm('Are you sure you want to run system maintenance? This will clean up old data.')">
+                        <button type="submit" class="btn btn-outline-warning w-100 mb-2">
+                            <i class="fas fa-broom me-2"></i>Cleanup Old Data
+                        </button>
+                    </form>
+                    <button type="button" class="btn btn-outline-secondary w-100" onclick="location.href='{{ url_for('admin.backup') }}'">
+                        <i class="fas fa-download me-2"></i>Database Backup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Health -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-heartbeat text-danger me-2"></i>System Health
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-circle text-success fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Database</h6>
+                                    <small class="text-muted">Connection healthy</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-circle text-success fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Application</h6>
+                                    <small class="text-muted">Running normally</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-circle text-warning fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Storage</h6>
+                                    <small class="text-muted">Monitor usage</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent System Activity -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history text-info me-2"></i>System Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Application Details</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Version:</strong></td>
+                                    <td>AIM@20 v1.0.0</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Framework:</strong></td>
+                                    <td>Flask 2.3+</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Database:</strong></td>
+                                    <td>SQLite</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>AI Engine:</strong></td>
+                                    <td>Gemini API</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>System Status</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Status:</strong></td>
+                                    <td><span class="badge bg-success">Online</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Last Backup:</strong></td>
+                                    <td>Never</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Uptime:</strong></td>
+                                    <td>{{ "Current Session" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Environment:</strong></td>
+                                    <td>Development</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-card {
+    padding: 1rem;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.btn-outline-warning:hover {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #212529;
+}
+
+.progress {
+    border-radius: 4px;
+}
+
+.card {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border: none;
+    border-radius: 10px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px 10px 0 0 !important;
+    border-bottom: none;
+}
+</style>
+
+<script>
+// Auto-refresh system stats every 30 seconds
+setInterval(function() {
+    // Could implement AJAX call to refresh stats if needed
+    console.log('System stats refresh');
+}, 30000);
+
+// Add loading animation for maintenance actions
+document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function() {
+        const button = this.querySelector('button[type="submit"]');
+        if (button) {
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+            button.disabled = true;
+        }
+    });
+});
+</script>
+{% endblock %}

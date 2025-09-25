@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-gradient-analytics text-white">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="h3 mb-1">
+                                <i class="fas fa-chart-line me-2"></i>Schedule Performance
+                            </h1>
+                            <p class="mb-0 opacity-75">
+                                Analytics for {{ schedule.date.strftime('%A, %B %d, %Y') }}
+                            </p>
+                        </div>
+                        <div class="text-end">
+                            <div class="h2 mb-0">{{ performance.performance_score }}%</div>
+                            <small class="opacity-75">Overall Score</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Performance Metrics -->
+        <div class="col-lg-8">
+            <div class="row g-3 mb-4">
+                <!-- Completion Rate -->
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <div class="metric-circle completion-rate mb-3" data-rate="{{ performance.completion_rate }}">
+                                <span class="metric-value">{{ performance.completion_rate }}%</span>
+                            </div>
+                            <h6 class="card-title">Task Completion</h6>
+                            <p class="text-muted small">{{ performance.completed_tasks }} of {{ performance.total_tasks }} tasks done</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Adherence Rate -->
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <div class="metric-circle adherence-rate mb-3" data-rate="{{ performance.adherence_rate }}">
+                                <span class="metric-value">{{ performance.adherence_rate }}%</span>
+                            </div>
+                            <h6 class="card-title">Schedule Adherence</h6>
+                            <p class="text-muted small">Tasks completed on schedule</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time Analysis -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-clock me-2"></i>Time Analysis
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="h4 text-primary mb-1">{{ performance.total_estimated_time }}m</div>
+                            <small class="text-muted">Estimated Time</small>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="h4 text-success mb-1">{{ performance.total_actual_time }}m</div>
+                            <small class="text-muted">Actual Time</small>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="h4 text-info mb-1">{{ performance.efficiency_ratio }}</div>
+                            <small class="text-muted">Efficiency Ratio</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task Details -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-tasks me-2"></i>Task Performance Details
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if schedule.tasks %}
+                        <div class="task-performance-list">
+                            {% for schedule_task in schedule.tasks %}
+                            <div class="task-performance-item d-flex justify-content-between align-items-center py-2 border-bottom">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center">
+                                        {% if schedule_task.task.completed %}
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        {% else %}
+                                        <i class="fas fa-circle text-muted me-2"></i>
+                                        {% endif %}
+                                        <div>
+                                            <strong class="task-title">{{ schedule_task.task.title }}</strong>
+                                            <br>
+                                            <small class="text-muted">
+                                                Scheduled: {{ schedule_task.scheduled_time.strftime('%I:%M %p') }} |
+                                                Duration: {{ schedule_task.duration }}m
+                                                {% if schedule_task.task.completed and schedule_task.task.actual_duration %}
+                                                | Actual: {{ schedule_task.task.actual_duration }}m
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="task-status">
+                                    {% if schedule_task.task.completed %}
+                                    <span class="badge bg-success">Completed</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center py-3">No tasks in this schedule</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights & Recommendations -->
+        <div class="col-lg-4">
+            <!-- Performance Insights -->
+            <div class="card mb-3 border-0 shadow-sm">
+                <div class="card-header bg-success text-white border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Performance Insights
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if performance.insights %}
+                        {% for insight in performance.insights %}
+                        <div class="insight-item mb-3">
+                            <i class="fas fa-info-circle text-primary me-2"></i>
+                            <small>{{ insight }}</small>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted small">Complete more tasks to see personalized insights!</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="card mb-3 border-0 shadow-sm">
+                <div class="card-header bg-info text-white border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-star me-2"></i>Recommendations
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="recommendations-list">
+                        {% if performance.completion_rate < 70 %}
+                        <div class="recommendation-item mb-3">
+                            <i class="fas fa-arrow-up text-info me-2"></i>
+                            <small>Try breaking large tasks into smaller, manageable chunks</small>
+                        </div>
+                        {% endif %}
+
+                        {% if performance.adherence_rate < 70 %}
+                        <div class="recommendation-item mb-3">
+                            <i class="fas fa-calendar-check text-success me-2"></i>
+                            <small>Consider scheduling fewer tasks per day for better completion</small>
+                        </div>
+                        {% endif %}
+
+                        {% if performance.efficiency_ratio > 1.3 %}
+                        <div class="recommendation-item mb-3">
+                            <i class="fas fa-clock text-warning me-2"></i>
+                            <small>Tasks taking longer than expected - add buffer time to future schedules</small>
+                        </div>
+                        {% endif %}
+
+                        <div class="recommendation-item mb-3">
+                            <i class="fas fa-brain text-primary me-2"></i>
+                            <small>Track your energy patterns to optimize scheduling</small>
+                        </div>
+
+                        <div class="recommendation-item">
+                            <i class="fas fa-trophy text-warning me-2"></i>
+                            <small>Celebrate small wins and maintain consistency</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('schedules.view', schedule_id=schedule.id) }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-eye me-1"></i>View Schedule
+                        </a>
+                        <a href="{{ url_for('schedules.generate') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>New Schedule
+                        </a>
+                        <a href="{{ url_for('insights.index') }}" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-chart-line me-1"></i>View Insights
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Gradient backgrounds */
+.bg-gradient-analytics {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Metric circles */
+.metric-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    position: relative;
+    background: conic-gradient(#e9ecef 0% 100%);
+}
+
+.completion-rate {
+    /* Will be set by JavaScript */
+}
+
+.adherence-rate {
+    /* Will be set by JavaScript */
+}
+
+.metric-circle::before {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    background: white;
+    border-radius: 50%;
+}
+
+.metric-value {
+    position: relative;
+    z-index: 1;
+    font-weight: bold;
+    color: #495057;
+}
+
+/* Task performance list */
+.task-performance-item:last-child {
+    border-bottom: none !important;
+}
+
+.task-performance-item .fa-check-circle {
+    color: #28a745 !important;
+}
+
+/* Insights and recommendations */
+.insight-item, .recommendation-item {
+    display: flex;
+    align-items: flex-start;
+}
+
+.insight-item i, .recommendation-item i {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .metric-circle {
+        width: 60px;
+        height: 60px;
+    }
+
+    .metric-value {
+        font-size: 0.9rem;
+    }
+}
+</style>
+
+<script>
+// Initialize performance visualization
+document.addEventListener('DOMContentLoaded', function() {
+    initializePerformanceCharts();
+});
+
+function initializePerformanceCharts() {
+    // Set dynamic progress circles using data attributes
+    const completionElement = document.querySelector('.completion-rate');
+    const adherenceElement = document.querySelector('.adherence-rate');
+
+    if (completionElement) {
+        const completionRate = parseFloat(completionElement.dataset.rate) || 0;
+        completionElement.style.background = `conic-gradient(#28a745 0% ${completionRate}%, #e9ecef ${completionRate}% 100%)`;
+    }
+
+    if (adherenceElement) {
+        const adherenceRate = parseFloat(adherenceElement.dataset.rate) || 0;
+        adherenceElement.style.background = `conic-gradient(#007bff 0% ${adherenceRate}%, #e9ecef ${adherenceRate}% 100%)`;
+    }
+
+    // Add animations
+    animateProgressCircles();
+}
+
+function animateProgressCircles() {
+    const circles = document.querySelectorAll('.metric-circle');
+    circles.forEach((circle, index) => {
+        setTimeout(() => {
+            circle.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                circle.style.transform = 'scale(1)';
+            }, 200);
+        }, index * 100);
+    });
+}
+</script>
+{% endblock %}

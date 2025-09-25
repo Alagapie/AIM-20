@@ -1,0 +1,714 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-gradient-primary text-white">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="h3 mb-1">{{ schedule.date.strftime('%A, %B %d, %Y') }}</h1>
+                            <p class="mb-0 opacity-75">
+                                <i class="fas fa-clock me-2"></i>{{ schedule.total_study_time }} minutes of focused study time
+                                {% if schedule.generated_by_ai %}
+                                <span class="badge bg-light text-primary ms-2">
+                                    <i class="fas fa-brain me-1"></i>AI Optimized
+                                </span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-light btn-sm" onclick="toggleView('timeline')">
+                                <i class="fas fa-list me-1"></i>Timeline
+                            </button>
+                            <button class="btn btn-light btn-sm" onclick="toggleView('calendar')">
+                                <i class="fas fa-calendar me-1"></i>Blocks
+                            </button>
+                            <a href="{{ url_for('schedules.performance', schedule_id=schedule.id) }}" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-chart-line me-1"></i>Performance
+                            </a>
+                            <a href="{{ url_for('schedules.generate') }}" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-plus me-1"></i>New Schedule
+                            </a>
+                            <a href="{{ url_for('schedules.index') }}" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-arrow-left me-1"></i>Back
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Schedule View -->
+        <div class="col-lg-9">
+            <!-- Timeline View -->
+            <div id="timeline-view" class="schedule-view">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-light border-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-stream me-2 text-primary"></i>Study Timeline
+                            </h5>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-primary active" onclick="filterTasks('all')">All</button>
+                                <button type="button" class="btn btn-outline-danger" onclick="filterTasks('high')">High</button>
+                                <button type="button" class="btn btn-outline-warning" onclick="filterTasks('medium')">Medium</button>
+                                <button type="button" class="btn btn-outline-success" onclick="filterTasks('low')">Low</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if scheduled_tasks %}
+                            <div class="timeline-modern">
+                                {% for scheduled_task in scheduled_tasks %}
+                                <div class="timeline-item priority-{{ scheduled_task.task.priority }}" data-priority="{{ scheduled_task.task.priority }}">
+                                    <div class="timeline-time">
+                                        <div class="time-display">{{ scheduled_task.scheduled_time.strftime('%I:%M %p') }}</div>
+                                        <div class="duration-badge">{{ scheduled_task.duration }}m</div>
+                                    </div>
+                                    <div class="timeline-connector">
+                                        <div class="timeline-dot bg-{{ 'danger' if scheduled_task.task.priority == 'high' else 'warning' if scheduled_task.task.priority == 'medium' else 'success' }}"></div>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <div class="task-card">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="task-title mb-1">{{ scheduled_task.task.title }}</h6>
+                                                    {% if scheduled_task.task.description %}
+                                                    <p class="task-description text-muted small mb-2">{{ scheduled_task.task.description|truncate(100) }}</p>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="task-actions">
+                                                    <button class="btn btn-sm btn-outline-primary" title="Mark Complete">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="task-metadata">
+                                                <div class="d-flex gap-2 flex-wrap align-items-center">
+                                                    {% if scheduled_task.task.category %}
+                                                    <span class="badge badge-category">{{ scheduled_task.task.category.title() }}</span>
+                                                    {% endif %}
+                                                    <span class="badge priority-badge priority-{{ scheduled_task.task.priority }}">
+                                                        <i class="fas fa-flag me-1"></i>{{ scheduled_task.task.priority.title() }}
+                                                    </span>
+                                                    {% if scheduled_task.task.due_date %}
+                                                    <span class="badge badge-due">
+                                                        <i class="fas fa-calendar me-1"></i>{{ scheduled_task.task.due_date.strftime('%b %d') }}
+                                                    </span>
+                                                    {% endif %}
+                                                    {% if scheduled_task.task.estimated_duration %}
+                                                    <span class="badge badge-estimate">
+                                                        <i class="fas fa-clock me-1"></i>{{ scheduled_task.task.estimated_duration }}m est.
+                                                    </span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <div class="empty-state">
+                                    <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                                    <h5 class="text-muted">No tasks scheduled</h5>
+                                    <p class="text-muted">This schedule doesn't have any tasks assigned yet.</p>
+                                    <a href="{{ url_for('tasks.index') }}" class="btn btn-primary">
+                                        <i class="fas fa-plus me-1"></i>Add Tasks
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar/Block View -->
+            <div id="calendar-view" class="schedule-view d-none">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-light border-0">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-th me-2 text-primary"></i>Time Blocks
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="time-blocks-container">
+                            <!-- Time blocks will be rendered here -->
+                            <div class="text-center py-4">
+                                <p class="text-muted">Time block visualization coming soon...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Productivity Dashboard -->
+        <div class="col-lg-3">
+            <!-- Schedule Performance -->
+            <div class="card mb-3 border-0 shadow-sm">
+                <div class="card-header bg-success text-white border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-trophy me-2"></i>Today's Progress
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="progress-circle mb-3">
+                        <div class="progress-circle-inner">
+                            <span class="progress-text">0%</span>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <small class="text-muted">Tasks Completed</small>
+                        <div class="mt-1">
+                            <span class="badge bg-success">0 of {{ scheduled_tasks|length }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Energy & Focus Insights -->
+            <div class="card mb-3 border-0 shadow-sm">
+                <div class="card-header bg-info text-white border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-brain me-2"></i>Energy Insights
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if insights and 'average_productivity_score' in insights %}
+                        <div class="energy-indicator mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small>Peak Energy Hours</small>
+                                <span class="badge bg-light text-dark">9AM-11AM</span>
+                            </div>
+                            <div class="energy-bar">
+                                <div class="energy-fill" style="width: 75%"></div>
+                            </div>
+                        </div>
+
+                        <div class="focus-score mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small>Focus Score</small>
+                                <strong>{{ insights.average_productivity_score|int }}%</strong>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-info" data-width="{{ insights.average_productivity_score }}"></div>
+                            </div>
+                        </div>
+
+                        {% if insights.recommendations %}
+                        <div class="alert alert-light border">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-lightbulb text-warning me-1"></i>Smart Tips
+                            </h6>
+                            <ul class="mb-0 small">
+                                {% for rec in insights.recommendations %}
+                                <li>{{ rec }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    {% elif insights and 'insights' in insights %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                            <p class="text-info small mb-0">{{ insights.insights }}</p>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-chart-line fa-2x text-muted mb-2"></i>
+                            <p class="text-muted small mb-0">Track your sessions to see personalized insights!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mb-3 border-0 shadow-sm">
+                <div class="card-header bg-light border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2 text-primary"></i>Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary btn-sm" onclick="startPomodoro()">
+                            <i class="fas fa-play me-1"></i>Start Focus Session
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" onclick="markCompleted()">
+                            <i class="fas fa-check me-1"></i>Mark Task Complete
+                        </button>
+                        <a href="{{ url_for('tasks.index') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>Add Tasks
+                        </a>
+                        <hr class="my-2">
+                        <form method="POST" action="{{ url_for('schedules.delete', schedule_id=schedule.id) }}"
+                              onsubmit="return confirm('Are you sure you want to delete this schedule?')">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-trash me-1"></i>Delete Schedule
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule Stats -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2 text-primary"></i>Schedule Stats
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="stat-item mb-2">
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">Total Study Time</small>
+                            <strong>{{ schedule.total_study_time }}m</strong>
+                        </div>
+                    </div>
+                    <div class="stat-item mb-2">
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">Tasks Scheduled</small>
+                            <strong>{{ scheduled_tasks|length }}</strong>
+                        </div>
+                    </div>
+                    <div class="stat-item mb-2">
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">Avg Task Duration</small>
+                            <strong>{% if scheduled_tasks %}{{ (schedule.total_study_time / scheduled_tasks|length)|round|int }}{% else %}0{% endif %}m</strong>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">Priority Distribution</small>
+                            <div>
+                                {% set high_count = scheduled_tasks|selectattr('task.priority', 'equalto', 'high')|list|length %}
+                                {% set med_count = scheduled_tasks|selectattr('task.priority', 'equalto', 'medium')|list|length %}
+                                {% set low_count = scheduled_tasks|selectattr('task.priority', 'equalto', 'low')|list|length %}
+                                <small class="text-danger">{{ high_count }}H</small>
+                                <small class="text-warning">{{ med_count }}M</small>
+                                <small class="text-success">{{ low_count }}L</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modern Timeline Styles -->
+<style>
+/* Gradient background for header */
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Timeline Styles */
+.timeline-modern {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline-item {
+    display: flex;
+    margin-bottom: 24px;
+    opacity: 1;
+    transition: all 0.3s ease;
+}
+
+.timeline-item.filtered {
+    opacity: 0.3;
+    transform: scale(0.98);
+}
+
+.timeline-time {
+    min-width: 120px;
+    text-align: right;
+    padding-right: 20px;
+    position: relative;
+}
+
+.time-display {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.duration-badge {
+    background: #e9ecef;
+    color: #6c757d;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    margin-top: 4px;
+    display: inline-block;
+}
+
+.timeline-connector {
+    position: relative;
+    width: 30px;
+    display: flex;
+    justify-content: center;
+}
+
+.timeline-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 2;
+}
+
+.timeline-connector::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+    transform: translateX(-50%);
+    z-index: 1;
+}
+
+/* Hide connector line after last item */
+.timeline-item:last-child .timeline-connector::before {
+    bottom: 50%;
+}
+
+.timeline-content {
+    flex: 1;
+    position: relative;
+}
+
+.task-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: all 0.3s ease;
+}
+
+.task-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.task-title {
+    color: #212529;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.task-description {
+    line-height: 1.4;
+}
+
+.task-metadata {
+    margin-top: 12px;
+}
+
+/* Badge Styles */
+.badge-category {
+    background: #e3f2fd;
+    color: #1976d2;
+    border: 1px solid #bbdefb;
+}
+
+.priority-badge {
+    font-weight: 600;
+    border: 1px solid;
+}
+
+.priority-high {
+    background: #ffebee;
+    color: #d32f2f;
+    border-color: #ffcdd2;
+}
+
+.priority-medium {
+    background: #fff3e0;
+    color: #f57c00;
+    border-color: #ffcc02;
+}
+
+.priority-low {
+    background: #e8f5e8;
+    color: #388e3c;
+    border-color: #c8e6c9;
+}
+
+.badge-due {
+    background: #f3e5f5;
+    color: #7b1fa2;
+    border: 1px solid #ce93d8;
+}
+
+.badge-estimate {
+    background: #e0f2f1;
+    color: #00695c;
+    border: 1px solid #80cbc4;
+}
+
+/* Progress Circle */
+.progress-circle {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.progress-circle-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(#28a745 0% 0%, #e9ecef 0% 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.progress-text {
+    font-weight: bold;
+    color: #28a745;
+    font-size: 1.2rem;
+}
+
+/* Energy Bar */
+.energy-bar {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.energy-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #17a2b8, #20c997);
+    border-radius: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .timeline-item {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .timeline-time {
+        text-align: left;
+        padding-right: 0;
+        min-width: auto;
+    }
+
+    .timeline-connector {
+        display: none;
+    }
+
+    .task-card {
+        margin-left: 0;
+    }
+}
+
+/* View Toggle */
+.schedule-view {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Priority filtering */
+.priority-high { border-left: 4px solid #dc3545; }
+.priority-medium { border-left: 4px solid #ffc107; }
+.priority-low { border-left: 4px solid #28a745; }
+</style>
+
+<!-- Interactive JavaScript -->
+<script>
+// View Toggle Functionality
+function toggleView(viewType) {
+    const timelineView = document.getElementById('timeline-view');
+    const calendarView = document.getElementById('calendar-view');
+
+    if (viewType === 'timeline') {
+        timelineView.classList.remove('d-none');
+        calendarView.classList.add('d-none');
+    } else if (viewType === 'calendar') {
+        timelineView.classList.add('d-none');
+        calendarView.classList.remove('d-none');
+        // Initialize calendar view if needed
+        initializeCalendarView();
+    }
+}
+
+// Priority Filtering
+function filterTasks(priority) {
+    const timelineItems = document.querySelectorAll('.timeline-item');
+
+    // Update button states
+    document.querySelectorAll('.btn-group-sm .btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    if (priority === 'all') {
+        timelineItems.forEach(item => {
+            item.classList.remove('filtered');
+        });
+    } else {
+        timelineItems.forEach(item => {
+            if (item.dataset.priority === priority) {
+                item.classList.remove('filtered');
+            } else {
+                item.classList.add('filtered');
+            }
+        });
+    }
+}
+
+// Pomodoro Session Starter
+function startPomodoro() {
+    // Get the first incomplete task
+    const firstTask = document.querySelector('.timeline-item:not(.filtered)');
+    if (firstTask) {
+        const taskTitle = firstTask.querySelector('.task-title').textContent;
+
+        // Show notification
+        showNotification('Starting Pomodoro session for: ' + taskTitle, 'success');
+
+        // Here you would typically redirect to pomodoro page or start session
+        // For now, just show a message
+        setTimeout(() => {
+            window.location.href = "{{ url_for('pomodoro.index') }}";
+        }, 1500);
+    }
+}
+
+// Mark Task Complete
+function markCompleted() {
+    // Find the current task (first non-filtered)
+    const currentTask = document.querySelector('.timeline-item:not(.filtered)');
+    if (currentTask) {
+        const taskTitle = currentTask.querySelector('.task-title').textContent;
+
+        if (confirm(`Mark "${taskTitle}" as completed?`)) {
+            // Animate completion
+            currentTask.style.transition = 'all 0.5s ease';
+            currentTask.style.opacity = '0.5';
+            currentTask.style.transform = 'scale(0.95)';
+
+            showNotification('Task marked as completed!', 'success');
+
+            // Update progress circle
+            updateProgress();
+
+            // Here you would make an AJAX call to update the task status
+            setTimeout(() => {
+                currentTask.remove();
+                updateProgress();
+            }, 1000);
+        }
+    }
+}
+
+// Update Progress Circle
+function updateProgress() {
+    const totalTasks = document.querySelectorAll('.timeline-item').length;
+    const completedTasks = document.querySelectorAll('.timeline-item[style*="opacity: 0.5"]').length;
+    const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+    // Update progress circle
+    const progressCircle = document.querySelector('.progress-circle-inner');
+    const progressText = document.querySelector('.progress-text');
+
+    if (progressCircle) {
+        progressCircle.style.background = `conic-gradient(#28a745 0% ${progressPercent}%, #e9ecef ${progressPercent}% 100%)`;
+    }
+
+    if (progressText) {
+        progressText.textContent = progressPercent + '%';
+    }
+
+    // Update task count badge
+    const taskCountBadge = document.querySelector('.badge.bg-success');
+    if (taskCountBadge) {
+        taskCountBadge.textContent = `${completedTasks} of ${totalTasks}`;
+    }
+}
+
+// Notification System
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Initialize Calendar View (placeholder)
+function initializeCalendarView() {
+    // This would initialize a full calendar view
+    // For now, just show a message
+    const calendarContainer = document.querySelector('.time-blocks-container');
+    if (calendarContainer) {
+        calendarContainer.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Calendar View</h5>
+                <p class="text-muted">Visual time-blocking interface coming soon...</p>
+                <small class="text-muted">This will show your schedule as colored time blocks</small>
+            </div>
+        `;
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Set initial progress
+    updateProgress();
+
+    // Set dynamic progress bar width
+    const progressBar = document.querySelector('.progress-bar[data-width]');
+    if (progressBar) {
+        const width = progressBar.dataset.width || 0;
+        progressBar.style.width = width + '%';
+    }
+
+    // Add smooth scrolling for timeline
+    const timelineContainer = document.querySelector('.timeline-modern');
+    if (timelineContainer) {
+        timelineContainer.style.scrollBehavior = 'smooth';
+    }
+
+    // Add tooltips to action buttons
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

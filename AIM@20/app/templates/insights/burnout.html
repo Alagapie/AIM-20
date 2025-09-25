@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0">Burnout Risk Analysis</h1>
+                    <p class="text-muted mb-0">Monitor your well-being and prevent burnout</p>
+                </div>
+                <a href="{{ url_for('insights.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Insights
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Risk Level -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-{{ 'danger' if analysis.risk_level == 'high' else 'warning' if analysis.risk_level == 'medium' else 'success' }} alert-dismissible">
+                <div class="d-flex align-items-center">
+                    {% if analysis.risk_level == 'high' %}
+                    <i class="fas fa-exclamation-triangle fa-3x me-3"></i>
+                    {% elif analysis.risk_level == 'medium' %}
+                    <i class="fas fa-exclamation-circle fa-3x me-3"></i>
+                    {% else %}
+                    <i class="fas fa-check-circle fa-3x me-3"></i>
+                    {% endif %}
+                    <div>
+                        <h4 class="alert-heading mb-1">Burnout Risk: {{ analysis.risk_level.title() }}
+                            <span class="badge bg-{{ 'danger' if analysis.risk_level == 'high' else 'warning' if analysis.risk_level == 'medium' else 'success' }}">
+                                {{ analysis.average_risk }}%
+                            </span>
+                        </h4>
+                        <p class="mb-0">{{ analysis.message }}</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Burnout Factors -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Key Risk Factors</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Study Hours > 8/day</span>
+                            <span class="badge bg-danger">High Risk</span>
+                        </div>
+                        <div class="progress mt-2" style="height: 8px;">
+                            <div class="progress-bar bg-danger" style="width: 80%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Low Focus Score (< 50%)</span>
+                            <span class="badge bg-warning">Medium Risk</span>
+                        </div>
+                        <div class="progress mt-2" style="height: 8px;">
+                            <div class="progress-bar bg-warning" style="width: 60%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Many Tasks, Few Goal Progress</span>
+                            <span class="badge bg-warning">Medium Risk</span>
+                        </div>
+                        <div class="progress mt-2" style="height: 8px;">
+                            <div class="progress-bar bg-warning" style="width: 50%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Low Productivity Score</span>
+                            <span class="badge bg-info">Low Risk</span>
+                        </div>
+                        <div class="progress mt-2" style="height: 8px;">
+                            <div class="progress-bar bg-info" style="width: 30%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Prevention Strategies</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6><i class="fas fa-clock text-success me-2"></i>Time Management</h6>
+                        <p class="small text-muted">Limit study sessions to 90 minutes with 10-minute breaks. Don't exceed 8 hours total per day.</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6><i class="fas fa-bed text-info me-2"></i>Rest & Recovery</h6>
+                        <p class="small text-muted">Ensure 7-8 hours of sleep nightly. Take at least one full rest day per week.</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6><i class="fas fa-utensils text-warning me-2"></i>Nutrition & Exercise</h6>
+                        <p class="small text-muted">Eat regular, balanced meals and incorporate physical activity for stress relief.</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6><i class="fas fa-users text-primary me-2"></i>Social Support</h6>
+                        <p class="small text-muted">Maintain social connections and seek support when feeling overwhelmed.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Burnout Trend Chart -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Burnout Risk Trend (Last {{ analysis.data_points }} Days)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="burnoutTrendChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wellness Checklist -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Daily Wellness Checklist</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Use this checklist to maintain healthy study habits:</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="sleep">
+                                <label class="form-check-label" for="sleep">
+                                    Got 7+ hours of sleep last night
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="exercise">
+                                <label class="form-check-label" for="exercise">
+                                    Did physical activity today
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="meals">
+                                <label class="form-check-label" for="meals">
+                                    Ate regular, balanced meals
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="breaks">
+                                <label class="form-check-label" for="breaks">
+                                    Took regular breaks during study
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="social">
+                                <label class="form-check-label" for="social">
+                                    Had social interaction today
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="hobbies">
+                                <label class="form-check-label" for="hobbies">
+                                    Engaged in non-study activities
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-outline-primary btn-sm" onclick="resetChecklist()">
+                            <i class="fas fa-redo me-1"></i>Reset Checklist
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load burnout trend data
+    fetch('/insights/api/productivity-data?days=14')
+        .then(response => response.json())
+        .then(data => {
+            createBurnoutTrendChart(data);
+        })
+        .catch(error => console.error('Error loading burnout data:', error));
+});
+
+function createBurnoutTrendChart(data) {
+    const ctx = document.getElementById('burnoutTrendChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.dates,
+            datasets: [{
+                label: 'Burnout Risk %',
+                data: data.burnout_risk,
+                borderColor: 'rgb(220, 53, 69)',
+                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: function(context) {
+                    const value = context.parsed.y;
+                    if (value >= 60) return 'rgb(220, 53, 69)'; // High risk - red
+                    if (value >= 30) return 'rgb(255, 193, 7)'; // Medium risk - yellow
+                    return 'rgb(25, 135, 84)'; // Low risk - green
+                },
+                pointBorderColor: function(context) {
+                    const value = context.parsed.y;
+                    if (value >= 60) return 'rgb(220, 53, 69)';
+                    if (value >= 30) return 'rgb(255, 193, 7)';
+                    return 'rgb(25, 135, 84)';
+                }
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Burnout Risk (%)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                },
+                annotation: {
+                    annotations: {
+                        highRisk: {
+                            type: 'line',
+                            yMin: 60,
+                            yMax: 60,
+                            borderColor: 'rgb(220, 53, 69)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            label: {
+                                content: 'High Risk Threshold',
+                                position: 'end'
+                            }
+                        },
+                        mediumRisk: {
+                            type: 'line',
+                            yMin: 30,
+                            yMax: 30,
+                            borderColor: 'rgb(255, 193, 7)',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            label: {
+                                content: 'Medium Risk Threshold',
+                                position: 'end'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function resetChecklist() {
+    const checkboxes = document.querySelectorAll('#wellness-checklist input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+}
+</script>
+{% endblock %}

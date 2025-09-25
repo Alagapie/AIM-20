@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0">Pomodoro Statistics</h1>
+                    <p class="text-muted mb-0">Track your focus sessions and productivity trends</p>
+                </div>
+                <a href="{{ url_for('pomodoro.index') }}" class="btn btn-primary">
+                    <i class="fas fa-clock me-1"></i>Back to Timer
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overall Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="h2 text-primary">{{ stats.total_sessions }}</div>
+                    <small class="text-muted">Total Sessions</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="h2 text-success">{{ stats.work_sessions }}</div>
+                    <small class="text-muted">Work Sessions</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="h2 text-info">{{ stats.completed_sessions }}</div>
+                    <small class="text-muted">Completed</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="h2 text-warning">{{ "%.1f"|format(stats.completion_rate) }}%</div>
+                    <small class="text-muted">Completion Rate</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Statistics -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Performance Metrics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong>Total Work Time:</strong>
+                                <span class="badge bg-primary ms-2">{{ stats.total_work_time }} minutes</span>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Total Break Time:</strong>
+                                <span class="badge bg-success ms-2">{{ stats.total_break_time }} minutes</span>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Average Session:</strong>
+                                <span class="badge bg-info ms-2">{{ "%.1f"|format(stats.avg_session_duration) }} minutes</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong>Work-to-Break Ratio:</strong>
+                                <span class="badge bg-secondary ms-2">
+                                    {% if stats.total_break_time > 0 %}
+                                        {{ "%.1f"|format(stats.total_work_time / stats.total_break_time) }}:1
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Sessions This Month:</strong>
+                                <span class="badge bg-light text-dark ms-2">{{ stats.total_sessions }}</span>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Best Streak:</strong>
+                                <span class="badge bg-warning ms-2">Coming Soon</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Quick Insights</h5>
+                </div>
+                <div class="card-body">
+                    {% if stats.total_sessions > 0 %}
+                        {% if stats.completion_rate >= 80 %}
+                            <div class="custom-alert custom-alert-success">
+                                <i class="fas fa-trophy me-2"></i>Excellent focus! You're completing {{ "%.0f"|format(stats.completion_rate) }}% of sessions.
+                            </div>
+                        {% elif stats.completion_rate >= 60 %}
+                            <div class="custom-alert custom-alert-info">
+                                <i class="fas fa-chart-line me-2"></i>Good progress! Your completion rate is {{ "%.0f"|format(stats.completion_rate) }}%.
+                            </div>
+                        {% else %}
+                            <div class="custom-alert custom-alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Consider shorter sessions to improve completion rate.
+                            </div>
+                        {% endif %}
+
+                        {% if stats.avg_session_duration > 30 %}
+                            <div class="custom-alert custom-alert-info">
+                                <i class="fas fa-clock me-2"></i>You prefer longer focused sessions.
+                            </div>
+                        {% elif stats.avg_session_duration < 20 %}
+                            <div class="custom-alert custom-alert-info">
+                                <i class="fas fa-bolt me-2"></i>You work well with shorter bursts.
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="custom-alert custom-alert-info">
+                            <i class="fas fa-info-circle me-2"></i>Start using the Pomodoro timer to see your statistics here!
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7-Day Activity Chart -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Last 7 Days Activity</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="weeklyChart" width="400" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Sessions Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Sessions</h5>
+                </div>
+                <div class="card-body">
+                    {% if sessions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Duration</th>
+                                        <th>Status</th>
+                                        <th>Task</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for session in sessions %}
+                                    <tr>
+                                        <td>{{ session.created_at.strftime('%m/%d') }}</td>
+                                        <td>
+                                            {% if session.session_type == 'work' %}
+                                                <span class="badge bg-primary">Work</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Break</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ session.duration or 0 }} min</td>
+                                        <td>
+                                            {% if session.completed %}
+                                                <span class="badge bg-success">Completed</span>
+                                            {% elif session.interrupted %}
+                                                <span class="badge bg-warning">Interrupted</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">In Progress</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if session.task %}
+                                                {{ session.task.title[:30] }}{% if session.task.title|length > 30 %}...{% endif %}
+                                            {% else %}
+                                                <em class="text-muted">No task</em>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No session data yet</h5>
+                            <p class="text-muted">Start using the Pomodoro timer to build your statistics!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Prepare data for the weekly chart
+const dailyData = JSON.parse('{{ daily_stats|tojson|safe }}');
+
+// Create the weekly activity chart
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('weeklyChart').getContext('2d');
+
+    const labels = dailyData.map(day => day.day_name);
+    const workSessions = dailyData.map(day => day.work_sessions);
+    const breakSessions = dailyData.map(day => day.break_sessions);
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Work Sessions',
+                    data: workSessions,
+                    backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Break Sessions',
+                    data: breakSessions,
+                    backgroundColor: 'rgba(75, 192, 192, 0.8)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Daily Pomodoro Sessions'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
